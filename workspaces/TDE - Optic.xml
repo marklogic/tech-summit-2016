@@ -1,0 +1,351 @@
+<export><workspace name="TDE / Optic"><query name="Define, check and load template" focus="true" listorder="1" taborder="1" active="true" database="17489359127315444747" server="6193127651436125818" database-name="Schemas" server-name="App-Services" mode="javascript">/*
+This example builds a template, validates the template and loads 
+it into the Schemas database.
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "schemas") {
+  'Please set Content Source to "Schemas" before running this code.';
+} else {
+  const myTemplate = xdmp.toJSON({
+    template: {
+      context: '/player',
+      rows: [
+        {
+          schemaName: 'football',
+          viewName: 'players',
+          columns: [
+            {
+              name: 'name',
+              scalarType: 'string',
+              val: 'name'
+            },
+            {
+              name: 'position',
+              scalarType: 'string',
+              val: 'position'
+            },
+            {
+              name: 'jerseyNumber',
+              scalarType: 'int',
+              val: 'jerseyNumber'
+            },
+            {
+              name: 'dateOfBirth',
+              scalarType: 'date',
+              val: 'dateOfBirth'
+            },
+            {
+              name: 'nationality',
+              scalarType: 'string',
+              val: 'nationality'
+            },
+            {
+              name: 'marketValue',
+              scalarType: 'int',
+              val: 'marketValue'
+            },
+            {
+              name: 'teamId',
+              scalarType: 'int',
+              val: 'teamId'
+            },
+            {
+              name: 'contractUntil',
+              scalarType: 'date',
+              val: 'contractUntil'
+            }
+          ]
+        }
+      ]
+    }
+  }).root;
+  //tde.validate returns an object "{ valid: true }"
+  const valid = tde.validate([myTemplate]).valid;
+  if (valid) {
+    const tde = require('/MarkLogic/tde')
+    tde.templateInsert('/templates/player-template', myTemplate, []);
+  } else {
+    'Invalid template =&gt; ' + tde.validate([myTemplate]).message;
+  }
+}
+</query><query name="Test template" focus="false" listorder="2" taborder="2" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Testing a template is possible via nodeDataExtract - 
+it builds up a sample of the view
+*/
+'use strict';
+const tde = require('/MarkLogic/tde');
+tde.nodeDataExtract([fn.doc('/player/cristianoronaldo.json')]);</query><query name="Simple SQL" focus="false" listorder="3" taborder="3" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="sql">-- Simple SQL statement
+SELECT * FROM players;</query><query name="Combination Query? Yes please!" focus="false" listorder="5" taborder="4" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+You can also run combination queries against your data,
+this shows SQL and a jsonPropertyWordQuery example
+*/
+
+xdmp.sql(
+  `SELECT name, position FROM players;`
+ ,
+ [],
+ [],
+ cts.jsonPropertyWordQuery('nationality', 'Hungary')
+);</query><query name="Optic API - simple queries" focus="false" listorder="6" taborder="5" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+A few simple examples using the Optic API
+Please remember only 100 items are returned by default!!
+*/
+
+'use strict';
+
+const op = require('/MarkLogic/optic');
+const playersView = op.fromView('Football', 'Players');
+/*
+Equivalent of:
+SELECT name, nationality
+FROM players;
+*/
+
+playersView
+  .select(['name', 'nationality'])
+  .result();
+
+/*
+Equivalent of:
+SELECT name, jerseyNumber
+FROM players
+WHERE jerseyNumber = 99;
+*/
+
+/*
+playersView
+  .select(['name', 'jerseyNumber'])
+  .where(op.eq(op.col('jerseyNumber'), 99))
+  .result();
+*/
+
+/*
+Equivalent of:
+SELECT name, jerseyNumber, nationality
+FROM players
+WHERE jerseyNumber = 7 AND nationality = 'Portuguese'
+ORDER BY name;
+*/
+
+/*
+playersView
+  .select(['name', 'jerseyNumber', 'nationality'])
+  .where(op.eq(op.col('jerseyNumber'), 7))
+  .where(op.eq(op.col('nationality'), 'Portugal'))
+  .result();
+*/</query><query name="Let's define another template" focus="false" listorder="7" taborder="6" active="true" database="17489359127315444747" server="6193127651436125818" database-name="Schemas" server-name="App-Services" mode="javascript">/*
+Here we define a template against the 'teams' data as well
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "schemas") {
+  'Please set Content Source to "Schemas" before running this code.';
+} else {
+  const myTemplate = xdmp.toJSON({
+    template: {
+      context: '/team',
+      rows: [
+        {
+          schemaName: 'football',
+          viewName: 'teams',
+          columns: [
+            {
+              name: 'name',
+              scalarType: 'string',
+              val: 'name'
+            },
+            {
+              name: 'id',
+              scalarType: 'int',
+              val: 'id'
+            },
+            {
+              name: 'value',
+              scalarType: 'int',
+              val: 'value'
+            }
+          ]
+        }
+      ]
+    }
+  }).root;
+  //returns an object "{ valid: true }"
+  const valid = tde.validate([myTemplate]).valid;
+  if (valid) {
+    const tde = require('/MarkLogic/tde')
+    tde.templateInsert('/templates/team-template', myTemplate, []);
+  } else {
+    'Invalid template =&gt; ' + tde.validate([myTemplate]).message;
+  }
+}
+</query><query name="Test template with SQL" focus="false" listorder="8" taborder="7" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="sql">-- In MarkLogic the SQL92 standard is supported
+
+SELECT * FROM teams;
+
+-- A bit more complex example 
+
+/*
+SELECT COUNT(players.name), teams.name
+FROM players
+INNER JOIN teams
+ON players.teamId = teams.id
+GROUP BY teams.name
+ORDER BY COUNT(players.name) DESC
+*/
+
+/*
+And yet another complex example
+Note that this is a valid SQL statement but we'll have to rework this
+in order to achieve the same output using the Optic API -
+Optic is not a SQL builder
+*/
+
+/*
+SELECT teams.name, SUM(players.marketValue), teams.value
+FROM players
+INNER JOIN teams
+ON players.teamId = teams.id
+GROUP BY teams.name
+HAVING SUM(players.marketValue) &lt; teams.value;
+*/</query><query name="Optic API - advanced" focus="false" listorder="9" taborder="8" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Please remember that if the rows are not limited a limit of 100
+results will be imposed on the result of the document join.
+*/
+'use strict';
+
+const op = require('/MarkLogic/optic');
+const playerView = op.fromView('Football', 'Players');
+const teamView = op.fromView('Football', 'Teams');
+
+/*
+Equivalent of:
+SELECT players.name, players.nationality, teams.name
+FROM players
+INNER JOIN teams
+ON players.teamId = teams.id;
+*/
+
+playerView
+  .joinInner(teamView, op.on(op.col('teamId'),  teamView.col('id')))
+  .select([playerView.col('name'), 'nationality', teamView.col('name')])
+  .result();
+
+const date = new Date();
+const month = date.getMonth();
+const day = date.getDate();
+const eighteenToday = [date.getFullYear() - 18, !month[0] ? '0' + month : month, day &gt; 10 ? day : '0' + day].join('-');
+
+/*
+Display players who are younger than eighteen years old.
+*/
+
+/*
+const youngsters = playerView
+  .joinInner(teamView, op.on(playerView.col('teamId'),  teamView.col('id')))
+  .select([op.as('playerName', playerView.col('name')), 'dateOfBirth', op.as('teamName', teamView.col('name'))])
+  .where(op.ge(playerView.col('dateOfBirth'), eighteenToday))
+  .result();
+
+let youngPlayerList = [];
+for (let youngster of youngsters) {
+  youngPlayerList.push(`${youngster['playerName']} plays for ${youngster['teamName']} and his ${date.getFullYear() - new Date(youngster["football.players.dateOfBirth"]).getFullYear()} years old.`);
+}
+
+youngPlayerList;
+*/
+
+/*
+SELECT COUNT(players.name), teams.name
+FROM players
+INNER JOIN teams
+ON players.teamId = teams.id
+GROUP BY teams.name
+ORDER BY COUNT(players.name) DESC;
+*/
+
+/*
+playerView
+  .joinInner(teamView, op.on(playerView.col('teamId'),  teamView.col('id')))
+  .groupBy(teamView.col('name'), op.count(op.as('Total Players', playerView.col('name'))))
+  .orderBy(op.desc('Total Players'))
+  .result();
+*/
+
+/*
+SELECT teams.name, SUM(players.marketValue), teams.value
+FROM players
+INNER JOIN teams
+ON players.teamId = teams.id
+GROUP BY teams.name
+-- HAVING SUM(players.marketValue) &lt; teams.value;
+*/
+
+/*
+Take a look at the below query.
+We get the data and we pass it into a filter() / map()
+Seemingly everything is fine...BUT...it's not. :)
+*/
+
+const finalResult = [];
+const teams = playerView
+  .joinInner(teamView, op.on(playerView.col('teamId'),  teamView.col('id')))
+  .groupBy(op.as('Team Name', teamView.col('name')),
+           [op.as('teamMarketValue', teamView.col('value')), op.sum('totalPlayerMarketValue', playerView.col('marketValue'))])
+  .orderBy('Team Name')
+  //.offsetLimit(0, 130) //this fixes the issue
+  .result();
+
+for (let team of teams) {
+  finalResult.push(team);
+}
+
+finalResult
+  .filter(team =&gt; team['teamMarketValue'] &gt; team['totalPlayerMarketValue'])
+  .map(team =&gt; `${team['Team Name']} has a market value of €${team['teamMarketValue'].toLocaleString()} but has players worth of €${team['totalPlayerMarketValue'].toLocaleString()}`);
+
+
+/*
+Notice how there are more teams now in the resultset
+*/
+
+/*
+const finalResult = [];
+const teams = playerView
+  .joinInner(teamView, op.on(playerView.col('teamId'),  teamView.col('id')))
+  .groupBy(op.as('Team Name', teamView.col('name')),
+           [op.as('teamMarketValue', teamView.col('value')), op.sum('totalPlayerMarketValue', playerView.col('marketValue'))])
+  .where(op.lt(op.col('totalPlayerMarketValue'), op.col('teamMarketValue')))
+  .orderBy('Team Name')
+  .result();
+
+for (let team of teams) {
+  finalResult.push(`${team['Team Name']} has a market value of €${team['teamMarketValue'].toLocaleString()} but has players worth of €${team['totalPlayerMarketValue'].toLocaleString()}`)
+}
+finalResult;  
+*/</query><query name="Challenge" focus="false" listorder="9" taborder="10" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Write a query using the Optic API that returns
+all football players who play for Manchester United and have a valid contract *after* 2019
+List their name, jerseyNumber and position.
+
+Some variables have been created for you.
+*/
+
+//Solution
+
+'use strict';
+const team = 'Manchester United FC';
+const validContractUntil = '2020-01-01';</query><query name="Optic API - XQY" focus="false" listorder="10" taborder="9" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="xquery">import module namespace op = "http://marklogic.com/optic"
+                              at "/MarkLogic/optic.xqy";
+declare default function namespace "http://marklogic.com/optic";
+
+let $players := from-view('Football', 'Players')
+let $teams := from-view('Football', 'Teams')
+
+return $players
+  =&gt; join-inner($teams, on(col('teamId'), col('id')))
+  =&gt; select(($players =&gt; col('name'), 'nationality', $teams =&gt; col('name')))
+  =&gt; where(eq($teams =&gt; col('name'), 'Real Madrid CF'))
+  =&gt; result()</query></workspace></export>

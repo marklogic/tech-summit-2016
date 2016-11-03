@@ -1,0 +1,328 @@
+<export><workspace name="Redaction"><query name="Inserting a simple rule" focus="true" listorder="1" taborder="1" active="true" database="17489359127315444747" server="6193127651436125818" database-name="Schemas" server-name="App-Services" mode="javascript">/*
+Here we are inserting a redaction rule that masks out a player's market value
+In some cases redaction functions can accept optional parameters - mask-random is such function
+*/
+
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'schemas') {
+  'Please set Content Source to "Schemas" before running this code.';
+} else {
+  let rule_mask_random = {
+    rule: {
+      description: 'mask player market value',
+      path: '/player/marketValue',
+      method: {
+        function: 'mask-random'
+      }
+      /*,
+      options: {
+        length: 5 //returns a random value of 5 chars
+      }*/
+    }
+  };
+
+  xdmp.documentInsert('/rules/rule_mask_random', rule_mask_random, xdmp.defaultPermissions(), 'rule-1-col');
+}</query><query name="Testing mask-random rule" focus="false" listorder="2" taborder="3" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Here we see a few tests against one and multiple documents;
+*/
+
+'use strict';
+const rdt = require('/MarkLogic/redaction');
+const rules = ['rule-1-col'];
+const jsearch = require('/MarkLogic/jsearch');
+
+//Against one document
+rdt.redact(fn.doc('/player/cristianoronaldo.json'), rules);
+
+//Aginst multiple documents
+//rdt.redact(fn.doc(['/player/cristianoronaldo.json', '/player/waynerooney.json']), rules);
+
+//Against multiple documents using jSearch
+/*
+let results = jsearch
+  .collections('players')
+  .documents()
+  .where(cts.jsonPropertyWordQuery('nationality', 'Hungary'))
+  .map(match =&gt; {
+    match.document = rdt.redact(fn.doc(match.uri), rules)
+    return match;
+  })
+  .result().results;
+let players = [];
+results.map(player =&gt; players.push(player.document));
+players;
+*/
+
+//Against a collection of documents
+//let docs = fn.subsequence(fn.collection('players'), 1, 10);
+//rdt.redact(docs, rules);</query><query name="Insert extra document" focus="false" listorder="3" taborder="5" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Inserting an extra document to see some additional rules
+*/
+
+'use strict';
+declareUpdate();
+
+let document = {
+  person: {
+    name: 'Tamas',
+    age: 18,
+    phone: '0044123456789',
+    hobbies: ['travel', 'waterpolo', 'cooking'],
+    email: 'tamas.piros@marklogic.com'
+  }
+};
+
+declareUpdate();
+xdmp.documentInsert('/person/tamas.json', document, [], 'people');</query><query name="Insert email rule" focus="false" listorder="4" taborder="6" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+This redaction rule will hide the domain of the email address
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'schemas') {
+  'Please set Content Source to "Schemas" before running this code.';
+} else {
+  let redact_email_address = {
+    rule: {
+      description: 'Rule to mask out the domain of the email',
+      path: '/person/email',
+      method: {
+        function: 'redact-email'
+      },
+      options: {
+        level: 'domain'
+      }
+    }
+  };
+
+  xdmp.documentInsert('/rules/redact-email-rule', redact_email_address, [], 'rule-2-col');
+}</query><query name="Rule Validation" focus="false" listorder="5" taborder="2" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Rules can be validated - if valid, they return the URI of the rule
+If invalid, they throw an exception
+*/
+
+'use strict';
+
+const rdt = require('/MarkLogic/redaction');
+rdt.ruleValidate('rule-1-col');</query><query name="Testing the email redaction" focus="false" listorder="6" taborder="7" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Testing the redaction function - notice how the actual domain is replaced with
+the string 'DOMAIN' in the document
+*/
+
+'use strict';
+const rdt = require('/MarkLogic/redaction');
+
+let rules = ['rule-2-col'];
+rdt.redact(fn.doc('/person/tamas.json'), rules);</query><query name="Insert conceal rules" focus="false" listorder="7" taborder="8" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Here we are inserting a redaction rule that masks out a player's market value
+In some cases redaction functions can accept optional parameters - mask-random is such function
+*/
+
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'schemas') {
+  'Please set Content Source to "Schemas" before running this code.';
+} else {
+  let rule_conceal = {
+    rule: {
+      description: 'conceal the hobbies array',
+      path: '/person/hobbies', //notice how we specify the property name
+      method: {
+        function: 'conceal'
+      }
+    }
+  };
+  
+  let rule_conceal2 = {
+    rule: {
+      description: 'conceal the hobbies array',
+      path: '/person/array-node("hobbies")', //notice different concealment path
+      method: {
+        function: 'conceal'
+      }
+    }
+  };
+  xdmp.documentInsert('/rules/rule_conceal', rule_conceal, xdmp.defaultPermissions(), 'rule-3-col');
+  xdmp.documentInsert('/rules/rule_conceal2', rule_conceal2, xdmp.defaultPermissions(), 'rule-4-col');
+}</query><query name="Insert custom code to modules" focus="false" listorder="8" taborder="10" active="true" database="5921256894639678549" server="6193127651436125818" database-name="Modules" server-name="App-Services" mode="javascript">/*
+Loading a custom redaction function into the modules database
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "modules") {
+  'Please set Content Source to "Modules" before running this code.';
+} else {
+  xdmp.documentInsert('/rules/sample-redaction.sjs',
+                      xdmp.documentGet('/root/sjs/redaction/custom-redaction.sjs'));
+}</query><query name="precedence" focus="false" listorder="12" taborder="13" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Notice how we can't hide the email as well that's due to the precedence rules ...
+*/
+'use strict';
+const rdt = require('/MarkLogic/redaction');
+const rules = ['rule-2-col', 'rule-5-col'];
+
+
+rdt.redact(fn.doc('/person/tamas.json'), rules);</query><query name="Use conceal rules" focus="false" listorder="9" taborder="9" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Testing the two concealment rules
+*/
+
+'use strict';
+const rdt = require('/MarkLogic/redaction');
+
+let rules = ['rule-3-col']; //returns the array but with empty values
+let rules2 = ['rule-4-col']; //removes the entire hobbies array
+
+rdt.redact(fn.doc('/person/tamas.json'), rules);</query><query name="Insert custom rule" focus="false" listorder="10" taborder="11" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Here we are inserting a redaction rule that masks out the 'waterpolo' entry from the hobbies array
+Think about it: How could we make this function even better?
+*/
+
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'schemas') {
+  'Please set Content Source to "Schemas" before running this code.';
+} else {
+let rule_custom = {
+    rule: {
+      description: 'Custom rule to hide element of array',
+      path: '/person',
+      method: {
+        function: 'redact', //Remember: function property here has to be fn name from sjs export property
+        module: '/rules/sample-redaction.sjs'
+      }
+    }
+  };
+  xdmp.documentInsert('/rules/rule_custom', rule_custom, xdmp.defaultPermissions(), 'rule-5-col');
+}
+
+
+</query><query name="Test custom rule" focus="false" listorder="11" taborder="12" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+const rdt = require('/MarkLogic/redaction');
+const rules = ['rule-5-col'];
+
+rdt.redact(fn.doc('/person/tamas.json'), rules);
+</query><query name="Load new rules" focus="false" listorder="13" taborder="14" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Due to not guaranteed precedence rule we need to recreate our custom function
+The change in the path means that we do need to modify our script as well.
+
+*/
+
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'schemas') {
+  'Please set Content Source to "Schemas" before running this code.';
+} else {
+let rule_custom2 = {
+    rule: {
+      description: 'Custom rule to hide element of array',
+      path: '/person/hobbies', //notice the change here
+      method: {
+        function: 'redact', //Remember: function property here has to be fn name from sjs export property
+        module: '/rules/sample-redaction-updated.sjs'
+      }
+    }
+  };
+  xdmp.documentInsert('/rules/rule_custom_updated', rule_custom2, xdmp.defaultPermissions(), 'rule-6-col');
+}</query><query name="Load modified script" focus="false" listorder="14" taborder="15" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Loading a custom redaction function into the modules database
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "modules") {
+  'Please set Content Source to "Modules" before running this code.';
+} else {
+  xdmp.documentInsert('/rules/sample-redaction-updated.sjs',
+                      xdmp.documentGet('/root/sjs/redaction/custom-redaction-updated.sjs'));
+}</query><query name="Retest precedence rules" focus="false" listorder="15" taborder="16" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+And now when we apply multiple rules to the exact properties both of them can be applied
+*/
+
+'use strict';
+const rdt = require('/MarkLogic/redaction');
+const rules = ['rule-6-col'];
+
+// And now we can apply both of the rules
+//const rules = ['rule-2-col', 'rule-6-col'];
+rdt.redact(fn.doc('/person/tamas.json'), rules);</query><query name="One more example - step 1" focus="false" listorder="16" taborder="17" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Loading a custom redaction function into the modules database
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "modules") {
+  'Please set Content Source to "Modules" before running this code.';
+} else {
+  xdmp.documentInsert('/rules/sample-redaction-options.sjs',
+                      xdmp.documentGet('/root/sjs/redaction/custom-redaction-options.sjs'));
+}</query><query name="One more example - step 2" focus="false" listorder="17" taborder="18" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Due to not guaranteed precedence rule we need to recreate our custom function
+The change in the path means that we do need to modify our script as well.
+
+*/
+
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== 'schemas') {
+  'Please set Content Source to "Schemas" before running this code.';
+} else {
+let rule_custom_options = {
+    rule: {
+      description: 'Custom rule to hide element of array',
+      path: '/person/hobbies',
+      method: {
+        function: 'redact',
+        module: '/rules/sample-redaction-options.sjs'
+      },
+      options: {
+        arrayValue: 'travel'
+      }
+    }
+  };
+  xdmp.documentInsert('/rules/rule_custom_options', rule_custom_options, xdmp.defaultPermissions(), 'rule-7-col');
+}</query><query name="One more example - step 3" focus="false" listorder="18" taborder="19" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+
+*/
+
+'use strict';
+const rdt = require('/MarkLogic/redaction');
+const rules = ['rule-7-col'];
+
+rdt.redact(fn.doc('/person/tamas.json'), rules);</query><query name="Challenge" focus="false" listorder="19" taborder="20" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Create a custom module (SJS or XQY) and rule to mask the last 5 digits of the phone number.
+(You could use the redact-regex built-in function for this but for the sake of this example try to create your own custom function)
+
+//const doc = fn.doc('/person/tamas.json');
+//fn.head(doc).root.person.phone;
+
+desired output: 00441234xxxxx
+
+Please also consider that the length of the phone number may change, e.g.: +44123456789
+
+If you're up for a bigger challenge add an option to your custom redaction function that
+would replace the first 5 digits, i.e.:
+
+  rule: {
+      description: 'Custom rule for the coding challenge',
+      path: '/person/phone',
+      method: {
+        function: 'redactPhoneNumber',
+        module: '/your-custom-module.xqy|sjs'
+      },
+      options: {
+        mask: 'suffix' | 'prefix'
+      }
+    }
+*/</query><query name="XQY example" focus="false" listorder="20" taborder="4" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="xquery">import module namespace rdt = "http://marklogic.com/xdmp/redaction"
+                              at "/MarkLogic/redaction.xqy";
+                              
+let $rules := ("rule-1-col")
+let $doc := fn:doc('/player/cristianoronaldo.json')
+return rdt:redact($doc, $rules);</query></workspace></export>

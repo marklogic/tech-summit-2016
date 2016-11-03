@@ -1,0 +1,178 @@
+<export><workspace name="ELS"><query name="Add protected path" focus="true" listorder="1" taborder="1" active="true" database="13997348583429623280" server="8237723742945302996" database-name="Security" server-name="Admin" mode="javascript">/*
+This examples adds a protected path: the 'contractUntil' property 
+can only be read by users with the role 'secret'
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "security") {
+  'Please set Content Source to "Security" before running this code.';
+} else {
+  const security = require('/MarkLogic/security');
+  security.protectPath('/player/contractUntil', [], [xdmp.permission('secret', 'read', 'element')]);
+}</query><query name="Add query roleset" focus="false" listorder="2" taborder="2" active="true" database="13997348583429623280" server="8237723742945302996" database-name="Security" server-name="Admin" mode="javascript">/*
+A query roleset is also added to the Security database. This is 
+the role that will be combined with the values in the Universal Index
+The query rolesets are used by the query side to figure out which terms to use.
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "security") {
+  'Please set Content Source to "Security" before running this code.';
+} else {
+  const security = require('/MarkLogic/security');
+  const roleset = security.queryRoleset('secret');
+  security.addQueryRolesets(roleset);
+}</query><query name="Check protected paths" focus="false" listorder="3" taborder="3" active="true" database="13997348583429623280" server="8237723742945302996" database-name="Security" server-name="Admin" mode="javascript">/*
+Protected paths are placed into a collection
+An empty Sequence is returned if there are no protected paths, 
+otherwise it returns information about the protected paths.
+*/
+'use strict';
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "security") {
+  'Please set Content Source to "Security" before running this code.';
+} else {
+  fn.collection('http://marklogic.com/xdmp/protected-paths');
+}
+</query><query name="Interesting, admin..." focus="false" listorder="4" taborder="4" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Using the admin user you can read documents and the protected paths
+*/
+'use strict';
+
+fn.head(fn.doc('/player/cristianoronaldo.json')).root.player.contractUntil;
+
+/*
+But executing a query is a different matter completely:
+The below search should return quite a few number of footballer players
+*/
+
+/*
+let results = cts.search(
+  cts.jsonPropertyValueQuery('contractUntil', '2018-06-30')
+);
+
+fn.subsequence(results, 1, 10);
+*/
+</query><query name="Run test query" focus="false" listorder="6" taborder="5" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+This example shows how to read and execute search by changing the users
+*/
+'use strict';
+const user = 'admin';
+//const user = 'secretUser'; //has role 'secret'
+//const user = 'topSecretUser'; //has role 'top-secret'
+
+xdmp.eval("fn.doc('/player/cristianoronaldo.json');", null,
+          { userId: xdmp.user(user) }
+);
+
+/*
+xdmp.eval("fn.subsequence(cts.search(cts.jsonPropertyValueQuery('contractUntil', '2018-06-30')), 1, 10);", null,
+          { userId: xdmp.user(user) }
+);
+*/
+
+</query><query name="Element Hierarchies" focus="false" listorder="7" taborder="6" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Here we insert a new document with some permissions
+both secretUser and topSecretUser will be able to read this document
+*/
+'use strict';
+
+declareUpdate();
+
+const permissions = [
+  xdmp.permission('secret', 'read'), xdmp.permission('top-secret', 'read')
+];
+
+xdmp.documentInsert(
+'/els/hierarchy.xml', xdmp.unquote(`&lt;root&gt;
+ &lt;title&gt;Title of the Document&lt;/title&gt;
+ &lt;summary&gt;Summary of document contents&lt;/summary&gt;
+ &lt;executive-summary&gt;Executive summary of the document contents
+   &lt;secret&gt;Only role having "secret" can read this
+     &lt;top-secret&gt;Only role having "top-secret" can read this&lt;/top-secret&gt;
+   &lt;/secret&gt;
+&lt;/executive-summary&gt;
+&lt;content&gt;Contents of document 
+  &lt;top-secret&gt;Only role with "top-secret" can read this
+     &lt;secret&gt;Only role with "secret" can read this&lt;/secret&gt;
+  &lt;/top-secret&gt;
+Unclassified content
+&lt;/content&gt;
+&lt;/root&gt;`), {permissions: permissions});</query><query name="Adding extra query rolesets" focus="false" listorder="8" taborder="7" active="true" database="13997348583429623280" server="8237723742945302996" database-name="Security" server-name="Admin" mode="javascript">/*
+Here we are adding two query rolesets - one for secret and another
+for top-secret
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "security") {
+  'Please set Content Source to "Security" before running this code.';
+} else {
+  const security = require('/MarkLogic/security');
+  const roleset1 = security.queryRoleset('secret');
+  const roleset2 = security.queryRoleset('top-secret');
+  security.addQueryRolesets([roleset1, roleset2]);
+}</query><query name="Adding protected paths" focus="false" listorder="10" taborder="8" active="true" database="13997348583429623280" server="8237723742945302996" database-name="Security" server-name="Admin" mode="javascript">/*
+New protected paths are also specified:
+- secretUser will be able to read &lt;secret&gt;
+- topSecretUser will be able to read &lt;top-secret&gt;
+*/
+'use strict';
+declareUpdate();
+
+if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "security") {
+  'Please set Content Source to "Security" before running this code.';
+} else {
+  const security = require('/MarkLogic/security');
+  security.protectPath('secret', [], [xdmp.permission('secret', 'read', 'element')]);
+  security.protectPath('top-secret', [], [xdmp.permission('top-secret', 'read', 'element')]);
+}</query><query name="Running Examples" focus="false" listorder="11" taborder="9" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">'use strict';
+/*
+'secretUser' cannot see the elements marked with &lt;top-secret&gt;, only those
+that have no protected paths or marked with the protected path for &lt;secret&gt;
+But...remember?
+&lt;executive-summary&gt;Executive summary of the document contents
+   &lt;secret&gt;Only role having "secret" can read this
+     &lt;top-secret&gt;Only role having "top-secret" can read this&lt;/top-secret&gt;
+   &lt;/secret&gt;
+&lt;/executive-summary&gt;
+Since that &lt;top-secret&gt; node is the child of the &lt;secret&gt; node - 
+a node that 'secretUser' is authorised to see that node is also shown but it's children
+are not. Equally since in this case
+
+&lt;top-secret&gt;Only role with "top-secret" can read this
+     &lt;secret&gt;Only role with "secret" can read this&lt;/secret&gt;
+  &lt;/top-secret&gt;
+
+the &lt;secret&gt; element is the child of &lt;top-secret&gt; which this user can't see the 
+&lt;secret&gt; node is also not shown.
+
+'topSecretUser' only sees the &lt;top-secret&gt; nodes but won't see this one:
+&lt;top-secret&gt;Only role with "top-secret" can read this
+     &lt;secret&gt;Only role with "secret" can read this&lt;/secret&gt;
+  &lt;/top-secret&gt;
+Because of the reasons explained earlier.
+*/
+
+const user = 'secretUser';
+//const user = 'topSecretUser';
+
+xdmp.eval("fn.doc('/els/hierarchy.xml')", null,
+          { userId: xdmp.user(user) }
+);</query><query name="Challenge" focus="false" listorder="11" taborder="10" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Insert the following document into the database:
+
+  &lt;legistlations&gt;
+    &lt;legistlation signedBy="UK"&gt;Some incomprehensible text&lt;/legistlation&gt;
+    &lt;legistlation signedBy="US"&gt;Some more incomprehensible text&lt;/legistlation&gt;
+    &lt;legistlation signedBy="HU"&gt;Some even more incomprehensible text&lt;/legistlation&gt;
+  &lt;/legistlations&gt;
+
+Add a protected path so that topSecretUser can access the legistlation signed by the UK
+Test your solution by executing a word query against the term 'incomprehensible'
+
+*/
+
+'use strict';</query></workspace></export>
