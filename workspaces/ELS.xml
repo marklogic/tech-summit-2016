@@ -1,4 +1,4 @@
-<export><workspace name="ELS"><query name="Add protected path" focus="true" listorder="1" taborder="1" active="true" database="13997348583429623280" server="8237723742945302996" database-name="Security" server-name="Admin" mode="javascript">/*
+<export><workspace name="ELS"><query name="Add protected path" focus="false" listorder="1" taborder="1" active="true" database="13997348583429623280" server="8237723742945302996" database-name="Security" server-name="Admin" mode="javascript">/*
 This examples adds a protected path: the 'contractUntil' property 
 can only be read by users with the role 'secret'
 */
@@ -161,7 +161,7 @@ const user = 'secretUser';
 
 xdmp.eval("fn.doc('/els/hierarchy.xml')", null,
           { userId: xdmp.user(user) }
-);</query><query name="Challenge" focus="false" listorder="11" taborder="10" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+);</query><query name="Challenge" focus="true" listorder="11" taborder="10" active="true" database="9820603713212508548" server="6193127651436125818" database-name="athletedb-modules" server-name="App-Services" mode="javascript">/*
 Insert the following document into the database:
 
   &lt;legistlations&gt;

@@ -1,4 +1,4 @@
-<export><workspace name="Redaction"><query name="Inserting a simple rule" focus="true" listorder="1" taborder="1" active="true" database="17489359127315444747" server="6193127651436125818" database-name="Schemas" server-name="App-Services" mode="javascript">/*
+<export><workspace name="Redaction"><query name="Inserting a simple rule" focus="false" listorder="1" taborder="1" active="true" database="17489359127315444747" server="6193127651436125818" database-name="Schemas" server-name="App-Services" mode="javascript">/*
 Here we are inserting a redaction rule that masks out a player's market value
 In some cases redaction functions can accept optional parameters - mask-random is such function
 */
@@ -264,7 +264,6 @@ if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "modules") {
 }</query><query name="One more example - step 2" focus="false" listorder="17" taborder="18" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
 Due to not guaranteed precedence rule we need to recreate our custom function
 The change in the path means that we do need to modify our script as well.
-
 */
 
 'use strict';
@@ -287,8 +286,8 @@ let rule_custom_options = {
     }
   };
   xdmp.documentInsert('/rules/rule_custom_options', rule_custom_options, xdmp.defaultPermissions(), 'rule-7-col');
-}</query><query name="One more example - step 3" focus="false" listorder="18" taborder="19" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
-
+}</query><query name="One more example - step 3" focus="true" listorder="18" taborder="19" active="true" database="11920704305786878960" server="6193127651436125818" database-name="Documents" server-name="App-Services" mode="javascript">/*
+Testing the 7th rule
 */
 
 'use strict';

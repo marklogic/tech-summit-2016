@@ -66,6 +66,7 @@ if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "schemas") {
   if (valid) {
     const tde = require('/MarkLogic/tde')
     tde.templateInsert('/templates/player-template', myTemplate, []);
+    'Template loaded';
   } else {
     'Invalid template =&gt; ' + tde.validate([myTemplate]).message;
   }
@@ -177,6 +178,7 @@ if (xdmp.databaseName(xdmp.database()).toLowerCase() !== "schemas") {
   if (valid) {
     const tde = require('/MarkLogic/tde')
     tde.templateInsert('/templates/team-template', myTemplate, []);
+    'Template loaded';
   } else {
     'Invalid template =&gt; ' + tde.validate([myTemplate]).message;
   }
@@ -289,6 +291,7 @@ We get the data and we pass it into a filter() / map()
 Seemingly everything is fine...BUT...it's not. :)
 */
 
+/*
 const finalResult = [];
 const teams = playerView
   .joinInner(teamView, op.on(playerView.col('teamId'),  teamView.col('id')))
@@ -305,7 +308,7 @@ for (let team of teams) {
 finalResult
   .filter(team =&gt; team['teamMarketValue'] &gt; team['totalPlayerMarketValue'])
   .map(team =&gt; `${team['Team Name']} has a market value of €${team['teamMarketValue'].toLocaleString()} but has players worth of €${team['totalPlayerMarketValue'].toLocaleString()}`);
-
+*/
 
 /*
 Notice how there are more teams now in the resultset
